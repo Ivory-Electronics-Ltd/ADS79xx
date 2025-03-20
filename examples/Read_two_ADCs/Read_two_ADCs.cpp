@@ -1,27 +1,19 @@
 /**
- * @file two-adcs_test_improved.cpp
- * @author Your Name (you@domain.com)
+ * @file Read_two_ADCs.cpp
+ * @author Ivory Electronics Ltd
  * @brief Example code for reading two ADS7953 ADCs and printing their channel data.
  * @version 0.1
  * @date 2024-12-09
  * @copyright Copyright (c) 2024
  */
 
-#include "libraries.h" // Include necessary libraries
+#include "ADS79xx.h" // Include necessary libraries
 
 // Define constants for LED and board configuration
 #define OFF false
 #define ON true
 
-#define ESP32_BOARD 0
-#define STM32_BOARD 1
-#define BOARD_TYPE ESP32_BOARD // Set the board type (ESP32 or STM32)
-
-#if (BOARD_TYPE == STM32_BOARD)
-const int LED = 19; // PB9 or PC6 for STM32
-#elif (BOARD_TYPE == ESP32_BOARD)
 const int LED = 3; // GPIO3 for ESP32
-#endif
 
 unsigned long prevTime; // Track the last time the LED was toggled
 bool ledState = OFF;    // Current state of the LED
@@ -34,7 +26,7 @@ const uint8_t NUM_CHANNELS = 16;   // Number of channels per ADC
 const uint8_t TOTAL_CHANNELS = 32; // Total number of channels (two ADCs)
 
 // SPI Pins
-#if (BOARD_TYPE == ESP32_BOARD)
+
 const int MISO_PIN = 11;
 const int MOSI_PIN = 9;
 const int SCLK_PIN = 7;
@@ -42,16 +34,6 @@ const int SCLK_PIN = 7;
 // Chip Select Pins for two ADCs
 const int CS_H_PIN = 5; // High ADC (Channels 16-31)
 const int CS_L_PIN = 3; // Low ADC (Channels 0-15)
-
-#elif (BOARD_TYPE == STM32_BOARD)
-const int MISO_PIN = PB4; // PB4 for STM32
-const int MOSI_PIN = PB5; // PB5 for STM32
-const int SCLK_PIN = PB3; // PB3 for STM32
-
-// Chip Select Pins for two ADCs
-const int CS_H_PIN = PB2; // High ADC (Channels 16-31)
-const int CS_L_PIN = PB1; // Low ADC (Channels 0-15)
-#endif
 
 const char *labels[2] = {"LOW", "HIGH"}; // Labels for ADC instances
 
@@ -63,10 +45,10 @@ ADS79xx adcL(&SPI, MISO_PIN, MOSI_PIN, SCLK_PIN, CS_L_PIN); // Low ADC
 ADS79xx ADCs[2] = {adcL, adcH}; // adcL handles CH0-15, adcH handles CH16-31
 
 // Function Prototypes
-void initialize_adcs();                          // Initialize both ADCs
-void plot_all_channels();                        // Plot all channel voltages
-void raw_and_volts_printer();                    // Print raw and voltage data
-void print_voltage(uint8_t channel);             // Print voltage for a specific channel
+void initialize_adcs();                                           // Initialize both ADCs
+void plot_all_channels();                                         // Plot all channel voltages
+void raw_and_volts_printer();                                     // Print raw and voltage data
+void print_voltage(uint8_t channel);                              // Print voltage for a specific channel
 void adc_idx_and_ch_extractor(uint8_t channel, uint8_t *indexes); // Map global channel to ADC and local channel
 
 void setup()
@@ -167,7 +149,7 @@ void plot_all_channels()
 // Print detailed voltage information for a specific channel
 void print_voltage(uint8_t channel)
 {
-    char voltsBuf[10]; // Buffer to hold voltage string
+    char voltsBuf[10];  // Buffer to hold voltage string
     uint8_t indexes[2]; // Array to store ADC index and local channel index
 
     // Get ADC index and local channel index

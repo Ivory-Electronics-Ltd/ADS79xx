@@ -1,4 +1,34 @@
-// https://github.com/utat-ss/HERON-lib-common
+/**
+ * @file ADS79xx.h
+ * @author Ivory Electronics Ltd
+ * @brief Library for interfacing with the ADS7952 and ADS7953 Analog-to-Digital Converters (ADCs).
+ * @version 0.1
+ * @date 2025-03-20
+ * 
+ * @copyright Copyright (c) 2025
+ * 
+ * This library provides an interface to control and read data from the Texas Instruments ADS7952 and ADS7953
+ * 12-bit, multi-channel ADCs. It supports both manual and auto-scan modes, allowing users to read data from
+ * individual channels or cycle through multiple channels automatically. The library also includes utility
+ * functions for converting raw ADC values to actual voltages and vice versa.
+ * 
+ * Key Features:
+ * - Supports up to 16 channels (ADS7953) or 12 channels (ADS7952).
+ * - Configurable SPI communication speed.
+ * - Auto and manual channel selection modes.
+ * - Voltage conversion functions for raw ADC data.
+ * - Cross-platform compatibility with ESP32, STM32, and other Arduino-compatible boards.
+ * 
+ * Note:
+ * 
+ * This library is loosely based on the ADC library from UTAT Space Systems: https://github.com/utat-ss 
+ * located at: https://github.com/utat-ss/HERON-lib-common
+ * 
+ * For more information, refer to the Texas Instruments datasheet:
+ * http://www.ti.com/lit/ds/slas605c/slas605c.pdf
+ */
+
+
 
 #ifndef ADC_H
 #define ADC_H
