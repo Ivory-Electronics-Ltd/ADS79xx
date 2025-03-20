@@ -4,31 +4,29 @@
  * @brief Library for interfacing with the ADS7952 and ADS7953 Analog-to-Digital Converters (ADCs).
  * @version 0.1
  * @date 2025-03-20
- * 
+ *
  * @copyright Copyright (c) 2025
- * 
+ *
  * This library provides an interface to control and read data from the Texas Instruments ADS7952 and ADS7953
  * 12-bit, multi-channel ADCs. It supports both manual and auto-scan modes, allowing users to read data from
  * individual channels or cycle through multiple channels automatically. The library also includes utility
  * functions for converting raw ADC values to actual voltages and vice versa.
- * 
+ *
  * Key Features:
  * - Supports up to 16 channels (ADS7953) or 12 channels (ADS7952).
  * - Configurable SPI communication speed.
  * - Auto and manual channel selection modes.
  * - Voltage conversion functions for raw ADC data.
  * - Cross-platform compatibility with ESP32, STM32, and other Arduino-compatible boards.
- * 
+ *
  * Note:
- * 
- * This library is loosely based on the ADC library from UTAT Space Systems: https://github.com/utat-ss 
+ *
+ * This library is loosely based on the ADC library from UTAT Space Systems: https://github.com/utat-ss
  * located at: https://github.com/utat-ss/HERON-lib-common
- * 
+ *
  * For more information, refer to the Texas Instruments datasheet:
  * http://www.ti.com/lit/ds/slas605c/slas605c.pdf
  */
-
-
 
 #ifndef ADC_H
 #define ADC_H
@@ -53,7 +51,7 @@
 #define DBGLN(x) (Serial.println(x)); // Macro to print debug messages
 
 // SPI Speed
-#define ADS79xx_SPI_MAX_SPEED 20000000   // Max SPI speed for 1 Msps throughput
+#define ADS79xx_SPI_MAX_SPEED 20000000    // Max SPI speed for 1 Msps throughput
 #define ADS79xx_SPI_NORMAL_SPEED 10000000 // Normal SPI speed
 
 /*
@@ -67,9 +65,9 @@ is never set, nor are the GPIO pins used.
 // to cycle through in Auto-1 mode
 
 // DI15-12 - mode of operation
-#define AUTO1_MODE 0x2000  // Auto-1 mode
-#define AUTO2_MODE 0x3000  // Auto-2 mode
-#define MANUAL_MODE 0x1000 // Manual mode
+#define AUTO1_MODE 0x2000    // Auto-1 mode
+#define AUTO2_MODE 0x3000    // Auto-2 mode
+#define MANUAL_MODE 0x1000   // Manual mode
 #define CONTINUE_MODE 0x0000 // Continue mode
 
 // DI11 - programming or retaining bits DI06-00
@@ -88,10 +86,10 @@ is never set, nor are the GPIO pins used.
 
 // Mode and configuration commands
 #define REQUEST_AUTO1_MODE (AUTO1_MODE | EN_PGM | RANGE2 | CHAN_CTR_RST) // Request Auto-1 mode with reset
-#define ENTER_AUTO1_MODE (AUTO1_MODE | EN_PGM | RANGE2) // Enter Auto-1 mode
-#define CONTINUE_AUTO1_MODE (AUTO1_MODE | EN_PGM | RANGE2) // Continue Auto-1 mode
-#define START_RESET (MANUAL_MODE | EN_PGM | RANGE2 | POWER_DN) // Start reset sequence
-#define STOP_RESET (MANUAL_MODE | EN_PGM | RANGE2 | POWER_UP) // Stop reset sequence
+#define ENTER_AUTO1_MODE (AUTO1_MODE | EN_PGM | RANGE2)                  // Enter Auto-1 mode
+#define CONTINUE_AUTO1_MODE (AUTO1_MODE | EN_PGM | RANGE2)               // Continue Auto-1 mode
+#define START_RESET (MANUAL_MODE | EN_PGM | RANGE2 | POWER_DN)           // Start reset sequence
+#define STOP_RESET (MANUAL_MODE | EN_PGM | RANGE2 | POWER_UP)            // Stop reset sequence
 
 // ADC type
 class ADS79xx
@@ -111,21 +109,21 @@ public:
     uint16_t auto_channels;
 
     // Private members
-    adc_mode mode; // Current mode (MANUAL or AUTO1)
+    adc_mode mode;                       // Current mode (MANUAL or AUTO1)
     uint16_t channel_data[ADC_CHANNELS]; // Stores the high/low reading after being fetched
 
     // Public methods
-    void init(); // Initialize the ADC
-    void reset(); // Reset the ADC
-    void fetch_all_channels(); // Fetch data from all channels
-    void fetch_channel(uint8_t channel); // Fetch data from a specific channel
-    uint16_t read_channel(uint8_t channel); // Read data from a specific channel
-    uint16_t fetch_and_read_channel(uint8_t channel); // Fetch and read data from a specific channel
-    double raw_to_ch_vol(uint16_t raw); // Convert raw ADC value to channel voltage
-    uint16_t ch_vol_to_raw(double ch_vol); // Convert channel voltage to raw ADC value
+    void init();                                                              // Initialize the ADC
+    void reset();                                                             // Reset the ADC
+    void fetch_all_channels();                                                // Fetch data from all channels
+    void fetch_channel(uint8_t channel);                                      // Fetch data from a specific channel
+    uint16_t read_channel(uint8_t channel);                                   // Read data from a specific channel
+    uint16_t fetch_and_read_channel(uint8_t channel);                         // Fetch and read data from a specific channel
+    double raw_to_ch_vol(uint16_t raw);                                       // Convert raw ADC value to channel voltage
+    uint16_t ch_vol_to_raw(double ch_vol);                                    // Convert channel voltage to raw ADC value
     double ch_vol_to_vol_div(double ch_vol, double low_res, double high_res); // Convert channel voltage to voltage divider output
-    static void setSPIspeed(ADS79xx *adc, uint32_t speed); // Set SPI speed
-    inline uint32_t getSPIspeed() { return _SPIspeed; }; // Get current SPI speed
+    static void setSPIspeed(ADS79xx *adc, uint32_t speed);                    // Set SPI speed
+    inline uint32_t getSPIspeed() { return _SPIspeed; };                      // Get current SPI speed
 
 protected:
     // SPI pins
@@ -135,8 +133,8 @@ protected:
     uint8_t _csPin;   // CS pin
 
     HardwareSerial *_dbgPrt = nullptr; // Debug print (for devices with native Serial)
-    SPIClass *_mySPI = nullptr; // SPI class instance
-    SPISettings _spi_settings; // SPI settings
+    SPIClass *_mySPI = nullptr;        // SPI class instance
+    SPISettings _spi_settings;         // SPI settings
 
     uint32_t _SPIspeed = ADS79xx_SPI_MAX_SPEED; // Current SPI speed
 

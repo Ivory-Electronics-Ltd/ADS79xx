@@ -1,6 +1,6 @@
 # ADS79xx ADC Library
 
-This library provides an interface to control and read data from the **ADS79xx** [family](https://www.ti.com/product/ADS7953?utm_source=google&utm_medium=cpc&utm_campaign=asc-null-null-GPN_EN-cpc-pf-google-soas&utm_content=ADS7953&ds_k=ADS7953&DCM=yes&gad_source=1&gclid=Cj0KCQjw1um-BhDtARIsABjU5x61C_Hn-_1tx492KCy7FjdV7nNZp1u41BZIAsCvnCUxpxlU0XBnP1AaAqA-EALw_wcB&gclsrc=aw.ds) of SPI Analog-to-Digital Converters (ADCs). These ADCs are 12-bit, multi-channel devices that support up to 16 channels (ADS7953) or 12 channels (ADS7952). The library is designed to work with **Arduino-compatible boards** such as AVR and ESP32  (future tests will be carried out for STM32)
+This library provides an interface to control and read data from the **ADS79xx** [family](https://www.ti.com/product/ADS7953?utm_source=google&utm_medium=cpc&utm_campaign=asc-null-null-GPN_EN-cpc-pf-google-soas&utm_content=ADS7953&ds_k=ADS7953&DCM=yes&gad_source=1&gclid=Cj0KCQjw1um-BhDtARIsABjU5x61C_Hn-_1tx492KCy7FjdV7nNZp1u41BZIAsCvnCUxpxlU0XBnP1AaAqA-EALw_wcB&gclsrc=aw.ds) of SPI Analog-to-Digital Converters (ADCs). These ADCs are 12-bit, multi-channel devices that support up to 16-, 12-, 8-, 4-channels. The library is designed to work with **Arduino-compatible boards** such as AVR and ESP32  (future tests will be carried out for STM32)
 
 ---
 
@@ -27,13 +27,13 @@ This library provides an interface to control and read data from the **ADS79xx**
 ### Pin correspondence
 
 | ADC Pin | Microcontroller Pin |
-|---------|---------------------|
+| ------- | ------------------- |
 | VDD     | 3.3V or 5V          |
 | GND     | GND                 |
-| MISO    | MISO (e.g., GPIO11)  |
-| MOSI    | MOSI (e.g., GPIO9)   |
-| SCLK    | SCLK (e.g., GPIO7)   |
-| CS      | GPIO (e.g., GPIO5)   |
+| MISO    | MISO (e.g., GPIO11) |
+| MOSI    | MOSI (e.g., GPIO9)  |
+| SCLK    | SCLK (e.g., GPIO7)  |
+| CS      | GPIO (e.g., GPIO5)  |
 
 ---
 
