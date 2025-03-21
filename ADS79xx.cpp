@@ -22,16 +22,7 @@ void ADS79xx::init()
     digitalWrite(_csPin, HIGH);
 
     // Initialize SPI
-#if defined(ARDUINO_ARCH_ESP32)
-    DBGLN("Configuring SPI for ESP32...");
     _mySPI->begin(_sclkPin, _misoPin, _mosiPin, _csPin);
-#elif defined(ARDUINO_ARCH_STM32)
-    DBGLN("Configuring SPI Pins for STM32...");
-    _mySPI->setMISO(_misoPin);
-    _mySPI->setMOSI(_mosiPin);
-    _mySPI->setSCLK(_sclkPin);
-    _mySPI->begin();
-#endif
 
     _spi_settings = SPISettings(_SPIspeed, MSBFIRST, SPI_MODE0);
 

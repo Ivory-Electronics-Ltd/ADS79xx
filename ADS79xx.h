@@ -105,7 +105,7 @@ public:
     } adc_mode;
 
     // Constructor
-    ADS79xx(SPIClass *spi = &SPI, uint8_t miso = 9, uint8_t mosi = 11, uint8_t sclk = 7, uint8_t cs = 5);
+    ADS79xx(SPIClass *spi = &SPI, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_t cs);
 
     // Auto channels
     uint16_t auto_channels;
