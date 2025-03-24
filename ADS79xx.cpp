@@ -1,64 +1,119 @@
 #include "ADS79xx.h"
 
-// Constructor for ADS79xx class
+/**
+ * @brief Default Constructor.
+ * Initializes the ADC instance with default values for later initialization.
+ */
+ADS79xx::ADS79xx()
+    : _mySPI(nullptr), _misoPin(255), _mosiPin(255), _sclkPin(255), _csPin(255), _initialized(false), _mode(MANUAL), _SPIspeed(ADS79xx_SPI_MAX_SPEED)
+{
+    for (uint8_t i = 0; i < ADC_CHANNELS; i++)
+    {
+        _channel_data[i] = 0;
+    }
+}
+
+/**
+ * @brief Parameterized Constructor.
+ * Initializes the ADC instance with the SPI interface and pin configuration.
+ *
+ * @param spi Pointer to the SPI instance.
+ * @param miso SPI MISO pin.
+ * @param mosi SPI MOSI pin.
+ * @param sclk SPI SCLK pin.
+ * @param cs SPI Chip-Select pin.
+ */
 ADS79xx::ADS79xx(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_t cs)
+    : _mySPI(spi), _misoPin(miso), _mosiPin(mosi), _sclkPin(sclk), _csPin(cs), _initialized(false), _mode(MANUAL), _SPIspeed(ADS79xx_SPI_MAX_SPEED)
+{
+
+    _mySPI = spi;
+
+    for (uint8_t i = 0; i < ADC_CHANNELS; i++)
+    {
+        _channel_data[i] = 0;
+    }
+    init(spi, miso, mosi, sclk, cs); // Initialize the hardware
+}
+
+/**
+ * @brief Initialize the ADC hardware.
+ * Used only with the default constructor for later initialization.
+ */
+void ADS79xx::init(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_t cs)
 {
     _mySPI = spi;
     _misoPin = miso;
     _mosiPin = mosi;
     _sclkPin = sclk;
     _csPin = cs;
-}
 
-// Initialize the ADC
-void ADS79xx::init()
-{
-#if defined(DEBUG)
-    DBGLN("Initialising ADC...");
-#endif
+    if (_misoPin == 255 || _mosiPin == 255 || _sclkPin == 255 || _csPin == 255 || _mySPI == nullptr)
+    {
+        DBGLN("Error: SPI pins or SPI instance not set!");
+        return;
+    }
 
-    // Set GPIO port for ADC CS
+    // Initialize SPI
+
     pinMode(_csPin, OUTPUT);
+
+    // Set initial state for CS pin
     digitalWrite(_csPin, HIGH);
 
     // Initialize SPI
     _mySPI->begin(_sclkPin, _misoPin, _mosiPin, _csPin);
 
+    // Initialize SPI settings
     _spi_settings = SPISettings(_SPIspeed, MSBFIRST, SPI_MODE0);
-
-#if defined(DEBUG)
-    DBGLN("SPI Configured...");
-#endif
 
     // Initialize channel data array
     for (uint8_t i = 0; i < ADC_CHANNELS; i++)
     {
-        channel_data[i] = 0;
+        _channel_data[i] = 0;
     }
 
-    this->mode = adc_mode::MANUAL;
+    _mode = MANUAL;
+
+    // Mark as initialized
+    _initialized = true;
+
+    // Reset the ADC
     reset();
 }
 
-// Reset the ADC
+/**
+ * @brief Check if the ADC instance is initialized.
+ * @return True if initialized, false otherwise.
+ */
+bool ADS79xx::isInitialized() const
+{
+    return _initialized;
+}
+
+/**
+ * @brief Reset the ADC.
+ */
 void ADS79xx::reset()
 {
-#if defined(DEBUG)
-    DBGLN("Resetting ADC...");
-#endif
-
-    uint16_t frame = START_RESET;
-    _send_frame(frame);
+    _send_frame(START_RESET);
     delayMicroseconds(10);
-    frame = STOP_RESET;
-    _send_frame(frame);
+    _send_frame(STOP_RESET);
     delayMicroseconds(10);
 }
 
-// Fetch data from all channels
+/**
+ * @brief Fetch data from all active channels in AUTO1 _mode.
+ */
 void ADS79xx::fetch_all_channels()
 {
-    if (this->mode == adc_mode::MANUAL)
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return;
+    }
+
+    if (_mode == MANUAL)
     {
         _send_frame(REQUEST_AUTO1_MODE);
         _send_frame(ENTER_AUTO1_MODE);
@@ -70,68 +125,171 @@ void ADS79xx::fetch_all_channels()
         {
             uint16_t raw_data = _send_frame(CONTINUE_AUTO1_MODE);
             uint8_t channel = raw_data >> 12;
-            channel_data[channel] = raw_data & 0x0FFF;
+            _channel_data[channel] = raw_data & 0x0FFF;
         }
     }
 
-    this->mode = adc_mode::AUTO1;
+    _mode = AUTO1;
 }
 
-// Fetch data from a specific channel
+/**
+ * @brief Fetch data from a specific ADC channel in MANUAL _mode.
+ * @param channel Channel number to fetch data from.
+ */
 void ADS79xx::fetch_channel(uint8_t channel)
 {
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return;
+    }
+
+    if (channel >= ADC_CHANNELS)
+    {
+        DBGLN("Invalid channel number!");
+        return;
+    }
+
     uint16_t channel_addr = ((uint16_t)channel) << 7;
     uint16_t frame = MANUAL_MODE | EN_PGM | channel_addr | RANGE2;
 
     _send_frame(frame);
-    _send_frame(frame);
+    _channel_data[channel] = _send_frame(frame) & 0x0FFF;
 
-    channel_data[channel] = _send_frame(frame) & 0x0FFF;
-
-    this->mode = adc_mode::MANUAL;
+    _mode = MANUAL;
 }
 
-// Read data from a specific channel
+/**
+ * @brief Read previously fetched data for a specific ADC channel.
+ * @param channel Channel number to read data from.
+ * @return The raw ADC value for the specified channel.
+ */
 uint16_t ADS79xx::read_channel(uint8_t channel)
 {
-    return channel_data[channel];
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return 0;
+    }
+
+    if (channel >= ADC_CHANNELS)
+    {
+        DBGLN("Invalid channel number!");
+        return 0;
+    }
+
+    return _channel_data[channel];
 }
 
-// Convert raw ADC data to voltage
-double ADS79xx::raw_to_ch_vol(uint16_t raw)
-{
-    double ratio = (double)raw / (double)0x0FFF;
-    return ratio * ADC_VREF;
-}
-
-// Convert voltage to raw ADC data
-uint16_t ADS79xx::ch_vol_to_raw(double ch_vol)
-{
-    return (uint16_t)((ch_vol / ADC_VREF) * 0x0FFF);
-}
-
-// Convert channel voltage to voltage divider output
-double ADS79xx::ch_vol_to_vol_div(double ch_vol, double low_res, double high_res)
-{
-    return ch_vol / low_res * (low_res + high_res);
-}
-
-// Set SPI speed
-void ADS79xx::setSPIspeed(ADS79xx *adc, uint32_t speed)
-{
-    adc->_SPIspeed = speed;
-}
-
-// Fetch and read data from a specific channel
+/**
+ * @brief Fetch and read data from a specific ADC channel.
+ * Combines the functionality of fetch_channel and read_channel.
+ *
+ * @param channel Channel number to fetch and read data from.
+ * @return The raw ADC value for the specified channel.
+ */
 uint16_t ADS79xx::fetch_and_read_channel(uint8_t channel)
 {
     fetch_channel(channel);
     return read_channel(channel);
 }
 
-// Send a 16-bit frame over SPI
+/**
+ * @brief Configure the ADC operational _mode.
+ * @param newMode Desired operational _mode (MANUAL or AUTO1).
+ */
+void ADS79xx::configureMode(adc_mode newMode)
+{
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return;
+    }
+
+    if (newMode == _mode)
+    {
+        return;
+    }
+
+    if (newMode == AUTO1)
+    {
+        _send_frame(REQUEST_AUTO1_MODE);
+        _send_frame(ENTER_AUTO1_MODE);
+    }
+    else if (newMode == MANUAL)
+    {
+        _send_frame(MANUAL_MODE | EN_PGM | RANGE2);
+    }
+
+    _mode = newMode;
+}
+
+/**
+ * @brief Convert raw ADC data to voltage.
+ * @param raw Raw ADC value.
+ * @return The calculated voltage.
+ */
+double ADS79xx::raw_to_ch_vol(uint16_t raw)
+{
+    return ((double)raw / 0x0FFF) * ADC_VREF;
+}
+
+/**
+ * @brief Convert voltage to raw ADC data.
+ * @param ch_vol Channel voltage.
+ * @return The corresponding raw ADC value.
+ */
+uint16_t ADS79xx::ch_vol_to_raw(double ch_vol)
+{
+    return (uint16_t)((ch_vol / ADC_VREF) * 0x0FFF);
+}
+
+/**
+ * @brief Convert channel voltage using a resistor voltage divider.
+ * @param ch_vol Channel voltage.
+ * @param low_res Lower resistor value in the divider.
+ * @param high_res Upper resistor value in the divider.
+ * @return The calculated output voltage.
+ */
+double ADS79xx::ch_vol_to_vol_div(double ch_vol, double low_res, double high_res)
+{
+    if (low_res == 0)
+    {
+        DBGLN("Error: low_res cannot be zero!");
+        return 0;
+    }
+    return ch_vol * (low_res + high_res) / low_res;
+}
+
+/**
+ * @brief Set the SPI communication speed.
+ * @param speed Desired SPI speed.
+ */
+void ADS79xx::setSPIspeed(uint32_t speed)
+{
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return;
+    }
+
+    _SPIspeed = speed;
+    _spi_settings = SPISettings(_SPIspeed, MSBFIRST, SPI_MODE0);
+}
+
+/**
+ * @brief Send a frame over SPI.
+ * @param frame Frame to send.
+ * @return Response received from the ADC.
+ */
 uint16_t ADS79xx::_send_frame(uint16_t frame)
 {
+    if (!_initialized)
+    {
+        DBGLN("ADC not initialized!");
+        return 0;
+    }
+
     uint16_t received = 0;
 
     _mySPI->beginTransaction(_spi_settings);
@@ -139,10 +297,6 @@ uint16_t ADS79xx::_send_frame(uint16_t frame)
     received = _mySPI->transfer16(frame);
     digitalWrite(_csPin, HIGH);
     _mySPI->endTransaction();
-
-#if defined(DEBUG)
-    DBGLN("Sent: 0x" + String(frame, HEX) + ", Received: 0x" + String(received, HEX));
-#endif
 
     return received;
 }
