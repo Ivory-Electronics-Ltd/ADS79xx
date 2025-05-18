@@ -1,0 +1,40 @@
+{
+    "name": "ADS79xx",
+    "version": "0.2.0",
+    "description": "Library for interfacing with the ADS7952 and ADS7953 Analog-to-Digital Converters (ADCs). Supports ESP32 and other Arduino-compatible boards.",
+    "keywords": "ads7952, ads7953, adc, spi, arduino, esp32",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/Ivory-Electronics-Ltd/ADS79xx"
+    },
+    "authors": [
+      {
+        "name": "Ivory Electronics Ltd",
+        "email": "contact@ivory-electronics.com",
+        "url": "https://www.ivory-electronics.com",
+        "maintainer": true
+      }
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/Ivory-Electronics-Ltd/ADS79xx",
+    "frameworks": "arduino",
+    "platforms": [
+      "espressif32",  
+      "atmelavr"     
+    ],
+    "dependencies": {
+      "SPI": {
+        "version": ">=1.0.0"
+      }
+    },
+   
+    "examples": [
+      {
+        "name": "Read_two_ADCs",
+        "base": "examples/Read_two_ADCs",
+        "files": [
+          "Read_two_ADCs.cpp"
+        ]
+      }
+    ]
+  }

@@ -2,55 +2,71 @@
  * @file Read_two_ADCs.cpp
  * @author Ivory Electronics Ltd
  * @brief Example code for reading two ADS7953 ADCs and printing their channel data.
- * @version 0.1
+ * @version 0.2
  * @date 2024-12-09
  * @copyright Copyright (c) 2024
+ *
+ * This example demonstrates how to interface with two ADS7953 ADCs using the ADS79xx library.
+ * It reads data from all channels of both ADCs and prints the raw and voltage values to the serial monitor.
+ *
+ * Key Features:
+ * - Initializes two ADS7953 ADCs.
+ * - Reads data from all channels in both ADCs.
+ * - Converts raw ADC data to voltage.
+ * - Prints channel data to the serial monitor.
+ *
+ * Hardware Setup:
+ * - Connect the SPI pins (MISO, MOSI, SCLK) to the corresponding pins on the ESP32.
+ * - Use separate Chip Select (CS) pins for each ADC.
+ * - Ensure the reference voltage is properly configured.
  */
 
-#include "ADS79xx.h" // Include necessary libraries
+#include "ADS79xx.h" // Include the ADS79xx library
 
 // Define constants for LED and board configuration
-#define OFF false
-#define ON true
+#define OFF false ///< LED off state
+#define ON true   ///< LED on state
 
-const int LED = 3; // GPIO3 for ESP32
+const int LED = 3; ///< GPIO pin for the LED (GPIO3 on ESP32)
 
-unsigned long prevTime; // Track the last time the LED was toggled
-bool ledState = OFF;    // Current state of the LED
+unsigned long prevTime; ///< Track the last time the LED was toggled
+bool ledState = OFF;    ///< Current state of the LED
 
 // Buffer for printing data
-char printBuf[250];
+char printBuf[250]; ///< Buffer to hold formatted strings for serial output
 
 // ADC and SPI configuration
-const uint8_t NUM_CHANNELS = 16;   // Number of channels per ADC
-const uint8_t TOTAL_CHANNELS = 32; // Total number of channels (two ADCs)
+const uint8_t NUM_CHANNELS = 16;   ///< Number of channels per ADC
+const uint8_t TOTAL_CHANNELS = 32; ///< Total number of channels (two ADCs)
 
 // SPI Pins
-
-const int MISO_PIN = 11;
-const int MOSI_PIN = 9;
-const int SCLK_PIN = 7;
+const int MISO_PIN = 11; ///< SPI MISO pin
+const int MOSI_PIN = 9;  ///< SPI MOSI pin
+const int SCLK_PIN = 7;  ///< SPI SCLK pin
 
 // Chip Select Pins for two ADCs
-const int CS_H_PIN = 5; // High ADC (Channels 16-31)
-const int CS_L_PIN = 3; // Low ADC (Channels 0-15)
+const int CS_H_PIN = 5; ///< Chip Select pin for the High ADC (Channels 16-31)
+const int CS_L_PIN = 3; ///< Chip Select pin for the Low ADC (Channels 0-15)
 
-const char *labels[2] = {"LOW", "HIGH"}; // Labels for ADC instances
+const char *labels[2] = {"LOW", "HIGH"}; ///< Labels for ADC instances
 
 // Create two instances of the ADS79xx ADCs
-ADS79xx adcH(&SPI, MISO_PIN, MOSI_PIN, SCLK_PIN, CS_H_PIN); // High ADC
-ADS79xx adcL(&SPI, MISO_PIN, MOSI_PIN, SCLK_PIN, CS_L_PIN); // Low ADC
+ADS79xx adcH(&SPI, MISO_PIN, MOSI_PIN, SCLK_PIN, CS_H_PIN); ///< High ADC instance
+ADS79xx adcL(&SPI, MISO_PIN, MOSI_PIN, SCLK_PIN, CS_L_PIN); ///< Low ADC instance
 
 // Array to hold the ADC instances, reordered for correct mapping
-ADS79xx ADCs[2] = {adcL, adcH}; // adcL handles CH0-15, adcH handles CH16-31
+ADS79xx ADCs[2] = {adcL, adcH}; ///< adcL handles CH0-15, adcH handles CH16-31
 
 // Function Prototypes
-void initialize_adcs();                                           // Initialize both ADCs
-void plot_all_channels();                                         // Plot all channel voltages
-void raw_and_volts_printer();                                     // Print raw and voltage data
-void print_voltage(uint8_t channel);                              // Print voltage for a specific channel
-void adc_idx_and_ch_extractor(uint8_t channel, uint8_t *indexes); // Map global channel to ADC and local channel
+void initialize_adcs();                                           ///< Initialize both ADCs
+void plot_all_channels();                                         ///< Plot all channel voltages
+void raw_and_volts_printer();                                     ///< Print raw and voltage data
+void print_voltage(uint8_t channel);                              ///< Print voltage for a specific channel
+void adc_idx_and_ch_extractor(uint8_t channel, uint8_t *indexes); ///< Map global channel to ADC and local channel
 
+/**
+ * @brief Setup function for initializing the system.
+ */
 void setup()
 {
     // Start serial communication for debugging
@@ -73,6 +89,9 @@ void setup()
     prevTime = millis();
 }
 
+/**
+ * @brief Main loop for toggling the LED and printing ADC data.
+ */
 void loop()
 {
     unsigned long now = millis();
@@ -91,7 +110,9 @@ void loop()
     delay(1000); // Optional delay to manage serial output rate
 }
 
-// Initialize both ADCs in the array
+/**
+ * @brief Initialize both ADCs in the array.
+ */
 void initialize_adcs()
 {
     for (uint8_t idx = 0; idx < 2; idx++)
@@ -101,7 +122,9 @@ void initialize_adcs()
     delay(1000); // Ensure ADCs are fully initialized
 }
 
-// Print raw and voltage data for all channels
+/**
+ * @brief Print raw and voltage data for all channels.
+ */
 void raw_and_volts_printer()
 {
     for (uint8_t ch = 0; ch < TOTAL_CHANNELS; ch++)
@@ -112,7 +135,9 @@ void raw_and_volts_printer()
     Serial.print("\r\n"); // Newline after printing all channels
 }
 
-// Plot all channels' voltages to the serial monitor
+/**
+ * @brief Plot all channels' voltages to the serial monitor.
+ */
 void plot_all_channels()
 {
     uint8_t chIdx = 0; // Channel index tracker
@@ -146,7 +171,10 @@ void plot_all_channels()
     }
 }
 
-// Print detailed voltage information for a specific channel
+/**
+ * @brief Print detailed voltage information for a specific channel.
+ * @param channel The global channel index (0-31).
+ */
 void print_voltage(uint8_t channel)
 {
     char voltsBuf[10];  // Buffer to hold voltage string
@@ -167,7 +195,11 @@ void print_voltage(uint8_t channel)
     Serial.print(printBuf);
 }
 
-// Map a global channel index to the corresponding ADC and its local channel
+/**
+ * @brief Map a global channel index to the corresponding ADC and its local channel.
+ * @param channel The global channel index (0-31).
+ * @param indexes Array to store the ADC index and local channel index.
+ */
 void adc_idx_and_ch_extractor(uint8_t channel, uint8_t *indexes)
 {
     // Ensure the channel is within valid bounds
