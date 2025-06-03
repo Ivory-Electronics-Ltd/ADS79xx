@@ -43,7 +43,7 @@
 
 // Debugging macro
 // Uncomment the following line to enable debugging
-// #define DEBUG
+#define DEBUG
 #define DBGLN(x) (Serial.println(x)) ///< Macro to print debug messages
 
 // SPI Speed

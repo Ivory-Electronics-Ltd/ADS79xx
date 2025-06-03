@@ -24,7 +24,14 @@ ADS79xx::ADS79xx()
  * @param cs SPI Chip-Select pin.
  */
 ADS79xx::ADS79xx(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_t cs)
-    : _mySPI(spi), _misoPin(miso), _mosiPin(mosi), _sclkPin(sclk), _csPin(cs), _initialized(false), _mode(MANUAL), _SPIspeed(ADS79xx_SPI_MAX_SPEED)
+    : _mySPI(spi), 
+    _misoPin(miso), 
+    _mosiPin(mosi), 
+    _sclkPin(sclk), 
+    _csPin(cs), 
+    _initialized(false), 
+    _mode(MANUAL), 
+    _SPIspeed(ADS79xx_SPI_MAX_SPEED)
 {
 
     _mySPI = spi;
@@ -62,7 +69,7 @@ void ADS79xx::init(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint
     digitalWrite(_csPin, HIGH);
 
     // Initialize SPI
-    _mySPI->begin(_sclkPin, _misoPin, _mosiPin, _csPin);
+    //_mySPI->begin(_sclkPin, _misoPin, _mosiPin, _csPin);
 
     // Initialize SPI settings
     _spi_settings = SPISettings(_SPIspeed, MSBFIRST, SPI_MODE0);
@@ -166,6 +173,8 @@ void ADS79xx::fetch_channel(uint8_t channel)
  */
 uint16_t ADS79xx::read_channel(uint8_t channel)
 {
+    uint16_t dataPoint;
+    
     if (!_initialized)
     {
         DBGLN("ADC not initialized!");
@@ -300,3 +309,6 @@ uint16_t ADS79xx::_send_frame(uint16_t frame)
 
     return received;
 }
+
+
+//! TODO: Implement ESP32 fast_GPIO_write functions for SPI communication
