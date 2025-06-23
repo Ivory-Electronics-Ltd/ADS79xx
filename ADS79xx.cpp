@@ -24,14 +24,14 @@ ADS79xx::ADS79xx()
  * @param cs SPI Chip-Select pin.
  */
 ADS79xx::ADS79xx(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_t cs)
-    : _mySPI(spi), 
-    _misoPin(miso), 
-    _mosiPin(mosi), 
-    _sclkPin(sclk), 
-    _csPin(cs), 
-    _initialized(false), 
-    _mode(MANUAL), 
-    _SPIspeed(ADS79xx_SPI_MAX_SPEED)
+    : _mySPI(spi),
+      _misoPin(miso),
+      _mosiPin(mosi),
+      _sclkPin(sclk),
+      _csPin(cs),
+      _initialized(false),
+      _mode(MANUAL),
+      _SPIspeed(ADS79xx_SPI_MAX_SPEED)
 {
 
     _mySPI = spi;
@@ -40,7 +40,9 @@ ADS79xx::ADS79xx(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint8_
     {
         _channel_data[i] = 0;
     }
-    init(spi, miso, mosi, sclk, cs); // Initialize the hardware
+
+    //! Redundant initialization --> we should orce the user to call init() after this constructor
+    // init(spi, miso, mosi, sclk, cs); // Initialize the hardware
 }
 
 /**
@@ -60,6 +62,8 @@ void ADS79xx::init(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint
         DBGLN("Error: SPI pins or SPI instance not set!");
         return;
     }
+
+    auto_channels = 0xFFFF; // <-- Enable all channels by default
 
     // Initialize SPI
 
@@ -174,7 +178,7 @@ void ADS79xx::fetch_channel(uint8_t channel)
 uint16_t ADS79xx::read_channel(uint8_t channel)
 {
     uint16_t dataPoint;
-    
+
     if (!_initialized)
     {
         DBGLN("ADC not initialized!");
@@ -309,6 +313,5 @@ uint16_t ADS79xx::_send_frame(uint16_t frame)
 
     return received;
 }
-
 
 //! TODO: Implement ESP32 fast_GPIO_write functions for SPI communication
