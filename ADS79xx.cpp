@@ -59,21 +59,24 @@ void ADS79xx::init(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint
 
     if (_misoPin == 255 || _mosiPin == 255 || _sclkPin == 255 || _csPin == 255 || _mySPI == nullptr)
     {
+#ifdef DEBUG
         DBGLN("Error: SPI pins or SPI instance not set!");
+#endif
         return;
     }
 
     auto_channels = 0xFFFF; // <-- Enable all channels by default
 
-    // Initialize SPI
-
+    // Initialize CS pin
     pinMode(_csPin, OUTPUT);
 
-    // Set initial state for CS pin
+// Set initial state for CS pin
+//! ESP32-specific function to set the CS pin
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+    _fastGpioSet(_csPin);
+#else
     digitalWrite(_csPin, HIGH);
-
-    // Initialize SPI
-    //_mySPI->begin(_sclkPin, _misoPin, _mosiPin, _csPin);
+#endif
 
     // Initialize SPI settings
     _spi_settings = SPISettings(_SPIspeed, MSBFIRST, SPI_MODE0);
@@ -84,6 +87,7 @@ void ADS79xx::init(SPIClass *spi, uint8_t miso, uint8_t mosi, uint8_t sclk, uint
         _channel_data[i] = 0;
     }
 
+    // Set MANUAL mode
     _mode = MANUAL;
 
     // Mark as initialized
@@ -108,9 +112,9 @@ bool ADS79xx::isInitialized() const
 void ADS79xx::reset()
 {
     _send_frame(START_RESET);
-    delayMicroseconds(10);
+    delayMicroseconds(1);
     _send_frame(STOP_RESET);
-    delayMicroseconds(10);
+    delayMicroseconds(1);
 }
 
 /**
@@ -120,15 +124,20 @@ void ADS79xx::fetch_all_channels()
 {
     if (!_initialized)
     {
+
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
+
         return;
     }
-
-    if (_mode == MANUAL)
-    {
-        _send_frame(REQUEST_AUTO1_MODE);
-        _send_frame(ENTER_AUTO1_MODE);
-    }
+    /*
+        if (_mode == MANUAL)
+        {
+            _send_frame(REQUEST_AUTO1_MODE);
+            _send_frame(ENTER_AUTO1_MODE);
+        }
+            */
 
     for (uint8_t i = 0; i < ADC_CHANNELS; i++)
     {
@@ -136,11 +145,34 @@ void ADS79xx::fetch_all_channels()
         {
             uint16_t raw_data = _send_frame(CONTINUE_AUTO1_MODE);
             uint8_t channel = raw_data >> 12;
+
             _channel_data[channel] = raw_data & 0x0FFF;
         }
     }
 
     _mode = AUTO1;
+}
+
+void ADS79xx::fetch_all_channels_externalCS()
+{
+    if (!_initialized)
+        return;
+
+    // Do NOT toggle CS or begin/end transaction here.
+    // Just issue SPI transfers and decode responses.
+
+    for (uint8_t i = 0; i < ADC_CHANNELS; ++i)
+    {
+        if (auto_channels & _BV(i))
+        {
+            uint16_t raw_data = _mySPI->transfer16(CONTINUE_AUTO1_MODE);
+
+            delayMicroseconds(3); // Ensure the transfer is complete
+
+            uint8_t channel = raw_data >> 12;
+            _channel_data[channel] = raw_data & 0x0FFF;
+        }
+    }
 }
 
 /**
@@ -151,13 +183,17 @@ void ADS79xx::fetch_channel(uint8_t channel)
 {
     if (!_initialized)
     {
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
         return;
     }
 
     if (channel >= ADC_CHANNELS)
     {
+#ifdef DEBUG
         DBGLN("Invalid channel number!");
+#endif
         return;
     }
 
@@ -181,13 +217,17 @@ uint16_t ADS79xx::read_channel(uint8_t channel)
 
     if (!_initialized)
     {
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
         return 0;
     }
 
     if (channel >= ADC_CHANNELS)
     {
+#ifdef DEBUG
         DBGLN("Invalid channel number!");
+#endif
         return 0;
     }
 
@@ -215,7 +255,9 @@ void ADS79xx::configureMode(adc_mode newMode)
 {
     if (!_initialized)
     {
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
         return;
     }
 
@@ -268,7 +310,9 @@ double ADS79xx::ch_vol_to_vol_div(double ch_vol, double low_res, double high_res
 {
     if (low_res == 0)
     {
+#ifdef DEBUG
         DBGLN("Error: low_res cannot be zero!");
+#endif
         return 0;
     }
     return ch_vol * (low_res + high_res) / low_res;
@@ -282,7 +326,9 @@ void ADS79xx::setSPIspeed(uint32_t speed)
 {
     if (!_initialized)
     {
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
         return;
     }
 
@@ -299,19 +345,68 @@ uint16_t ADS79xx::_send_frame(uint16_t frame)
 {
     if (!_initialized)
     {
+#ifdef DEBUG
         DBGLN("ADC not initialized!");
+#endif
         return 0;
     }
 
     uint16_t received = 0;
 
     _mySPI->beginTransaction(_spi_settings);
+
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+    _fastGpioClear(_csPin);
+#else
     digitalWrite(_csPin, LOW);
+#endif
+
     received = _mySPI->transfer16(frame);
+
+#if defined(ESP32) || defined(ARDUINO_ARCH_ESP32)
+    _fastGpioSet(_csPin);
+#else
     digitalWrite(_csPin, HIGH);
+#endif
+
     _mySPI->endTransaction();
 
     return received;
 }
 
-//! TODO: Implement ESP32 fast_GPIO_write functions for SPI communication
+// --- Fast GPIO for ESP32 ---
+
+void ADS79xx::_fastGpioSet(uint8_t gpio)
+{
+    if (gpio < 32)
+        GPIO.out_w1ts = (1 << gpio);
+    else
+        GPIO.out1_w1ts.val = (1 << (gpio - 32));
+}
+
+void ADS79xx::_fastGpioClear(uint8_t gpio)
+{
+    if (gpio < 32)
+        GPIO.out_w1tc = (1 << gpio);
+    else
+        GPIO.out1_w1tc.val = (1 << (gpio - 32));
+}
+
+bool ADS79xx::_fastGpioRead(uint8_t gpio)
+{
+    if (gpio < 32)
+        return (GPIO.in >> gpio) & 0x1;
+    else
+        return (GPIO.in1.data >> (gpio - 32)) & 0x1;
+}
+
+// Utility for fast set/clear
+void ADS79xx::_fastGpioSetOrClear(uint8_t gpio, bool value)
+{
+    if (value)
+        _fastGpioSet(gpio);
+    else
+        _fastGpioClear(gpio);
+}
+
+////TODO: Implement ESP32 fast_GPIO_write functions for SPI communication

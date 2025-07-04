@@ -43,7 +43,7 @@
 
 // Debugging macro
 // Uncomment the following line to enable debugging
-#define DEBUG
+// #define DEBUG
 #define DBGLN(x) (Serial.println(x)) ///< Macro to print debug messages
 
 // SPI Speed
@@ -148,6 +148,12 @@ public:
     void fetch_all_channels();
 
     /**
+     * @brief Fetch data from all active channels in AUTO1 mode using external CS pin.
+     * This function is used when the ADC is connected to an external chip-select pin.
+     */
+    void fetch_all_channels_externalCS();
+
+    /**
      * @brief Fetch data from a specific ADC channel in MANUAL mode.
      * @param channel Channel number to fetch data from.
      */
@@ -223,6 +229,12 @@ protected:
      * @return Response received from the ADC.
      */
     uint16_t _send_frame(uint16_t frame);
+
+    //! ESP32-specific function to set the CS pin
+    bool _fastGpioRead(uint8_t gpio);
+    void _fastGpioClear(uint8_t gpio);
+    void _fastGpioSet(uint8_t gpio);
+    void _fastGpioSetOrClear(uint8_t gpio, bool value);
 };
 
 #endif // ADC_H
